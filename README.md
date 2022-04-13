@@ -2,6 +2,8 @@
   
 通过八一数理和康熙字典笔画测算名称和测算手机号码
 
+<https://pkg.go.dev/github.com/cnk3x/bys>
+
 ```go
 //api 很简单
 package main
