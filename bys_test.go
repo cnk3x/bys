@@ -1,12 +1,12 @@
 package bys
 
 import (
-	"encoding/json"
 	"strconv"
 	"testing"
 )
 
 var names = []string{
+	"五加一",
 	"燕加元",
 	"舒护侠",
 	"半亩岛",
@@ -16,6 +16,7 @@ var names = []string{
 	"VSZP",
 	"vsA!123",
 	"克罗诗丁",
+	"汉方净",
 }
 
 func BenchmarkAssessName(b *testing.B) {
@@ -41,22 +42,12 @@ func BenchmarkAssessPhone(b *testing.B) {
 func TestByName(t *testing.T) {
 	for _, n := range names {
 		r := AssessName(n)
-		if r != nil {
-			dr, _ := json.Marshal(r)
-			t.Logf("%s: %s", n, dr)
-		} else {
-			t.Logf("%s: is nil", n)
-		}
+		t.Logf("%-*s %s", countText(n, 15), n, r)
 	}
 }
 
 func TestByPhone(t *testing.T) {
 	n := "13012345678"
 	r := AssessPhone(n)
-	if r != nil {
-		dr, _ := json.Marshal(r)
-		t.Logf("%s: %s", n, dr)
-	} else {
-		t.Logf("%s: is nil", n)
-	}
+	t.Logf("%-*s %s", 13, n, r)
 }

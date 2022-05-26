@@ -1,189 +1,271 @@
 package bys
 
 import (
-	"bytes"
 	"embed"
-	"encoding/csv"
+	"fmt"
 	"strconv"
-	"strings"
-	"sync"
+	"unicode/utf8"
 )
 
 var (
-	//go:embed dict/81.csv
-	e81 []byte
-	//go:embed dict/kx.csv
-	eKX []byte
-	//go:embed dict/fj.csv
-	eFJ []byte
-	_   embed.FS
-	o81 sync.Once
-	okx sync.Once
-	m81 []*R81
-	mkx map[rune]*RKx
+	_81_fen = []int{95, 55, 90, 60, 95, 95, 90, 85, 55, 50, 85, 50, 95, 60, 90, 100, 85, 85, 55, 55, 85, 50, 90, 85, 80, 60, 70, 30, 95, 55, 100, 100, 85, 30, 80, 50, 90, 70, 85, 75, 95, 75, 75, 60, 85, 60, 75, 95, 60, 70, 70, 85, 70, 40, 75, 50, 85, 65, 60, 40, 60, 50, 85, 35, 85, 50, 90, 85, 50, 40, 70, 55, 85, 50, 70, 30, 65, 65, 50, 65, 95}
+	_81_jx  = []string{"吉", "凶", "吉", "凶", "吉", "吉", "吉", "吉", "凶", "凶", "吉", "凶", "吉", "凶", "吉", "吉", "吉", "吉", "凶", "凶", "吉", "凶", "吉", "吉", "吉", "凶", "凶带吉", "凶", "吉", "凶", "吉", "吉", "吉", "凶", "吉", "凶", "吉", "凶带吉", "吉", "吉带凶", "吉", "吉带凶", "吉带凶", "凶", "吉", "凶", "吉", "吉", "凶", "吉带凶", "吉带凶", "吉", "吉带凶", "凶", "吉带凶", "凶", "吉", "凶带吉", "凶", "凶", "吉带凶", "凶", "吉", "凶", "吉", "凶", "吉", "吉", "凶", "凶", "吉带凶", "凶", "吉", "凶", "吉带凶", "凶", "吉带凶", "吉带凶", "凶", "吉带凶", "吉"}
+	_81_zy  = map[int]string{3: "官", 13: "官艺", 14: "艺", 15: "财", 16: "财官", 18: "艺", 21: "官", 23: "官", 24: "财", 26: "艺", 29: "财官艺", 31: "官", 32: "财", 33: "财艺", 35: "艺", 37: "官", 38: "艺", 39: "官", 41: "财官", 45: "官", 47: "官", 48: "艺", 52: "财"}
+	_81_ms  = []string{
+		"大展鸿图，信用得固，名利双收，可获成功",
+		"根基不固，摇摇欲坠，一盛一衰，劳而无获",
+		"根深蒂固，蒸蒸日上，如意吉祥，百事顺遂",
+		"前途坎坷，苦难折磨，非有毅力，难望成功",
+		"阴阳和合，生意兴隆，名利双收，后福重重",
+		"万宝集门，天降幸运，立志奋发，得成大功",
+		"独营生意，和气吉祥，排除万难，必获成功",
+		"努力发达，贯彻志望，不忘进退，可望成功",
+		"虽抱奇才，有才无命，独营无力，财力难望",
+		"乌云遮月，暗淡无光，空费心力，徒劳无功",
+		"草木逢春，枝叶沾露，稳健着实，必得人望",
+		"薄弱无力，孤立无援，外祥内苦，谋事难成",
+		"天赋吉运，能得人望，善用智慧，必获成功",
+		"忍得若难，必有后福，是成是败，惟靠紧毅",
+		"谦恭做事，外得人和，大事成就，一门兴隆",
+		"能获众望，成就大业，名利双收，盟主四方",
+		"排除万难，有贵人助，把握时机，可得成功",
+		"经商做事，顺利昌隆，如能慎始，百事亨通",
+		"成功虽早，慎防亏空，内外不合，障碍重重",
+		"智商志大，历尽艰难，焦心忧劳，进得两难",
+		"先历困苦，后得幸福，霜雪梅花，春来怒放",
+		"秋草逢霜，怀才不遇，忧愁怨苦，事不如意",
+		"旭日升天，名显四方，渐次进展，终成大业",
+		"绵绣前程，须靠自力，多用智谋，能奏大功",
+		"天时地利，只欠人和，讲信修睦，即可成功",
+		"波澜起伏，千变万化，凌架万难，必可成功",
+		"一成一败，一盛一衰，惟靠谨慎，可守成功",
+		"鱼临旱地，难逃恶运，此数大凶，不如更换",
+		"如龙得云，青云直上，智谋奋进，才略奏功",
+		"吉凶参半，得失相伴，投机取巧，吉凶无常",
+		"此数大吉，名利双收，渐进向上，大业成就",
+		"池中之龙，风云际会，一跃上天，成功可望",
+		"意气用事，人和必失，如能慎始，必可昌隆",
+		"灾难不绝，难望成功，此数大凶，不如更换",
+		"中吉之数，进退保守，生意安稳，成就普通",
+		"波澜得叠，常陷穷困，动不如静，有才无命",
+		"逢凶化吉，吉人天相，风调雨顺，生意兴隆",
+		"名虽可得，利则难获，艺界发展，可望成功",
+		"云开见月，虽有劳碌，光明坦途，指日可望",
+		"一成一衰，沉浮不定，知难而退，自获天佑",
+		"天赋吉运，德望兼备，继续努力，前途无限",
+		"事业不专，十九不成，专心进取，可望成功",
+		"雨夜之花，外祥内苦，忍耐自重，转凶为吉",
+		"虽用心计，事难遂愿，贪功冒进，必招失败",
+		"杨柳遇春，绿叶发枝，冲破难关，一举成名",
+		"坎坷不平，艰难重重，若无耐心，难望有成",
+		"有贵人助，可成大业，虽遇不幸，浮沉不定",
+		"美化丰实，鹤立鸡群，名利俱全，繁荣富贵",
+		"遇吉则吉，遇凶则凶，惟靠谨慎，逢凶化吉",
+		"吉凶互见，一成一败，凶中有吉，吉中有凶",
+		"一盛一衰，浮沉不常，自重自处，可保平安",
+		"草木逢春，雨过天晴，渡过难关，即获成功",
+		"盛衰参半，外祥内苦，先吉后凶，先凶后吉",
+		"虽倾全力，难望成功，此数大凶，最好更换",
+		"外观昌隆，内隐祸患，克服难关，开出泰运",
+		"事与愿违，终难成功，欲速不达，有始无终",
+		"虽有困难，时来运转，旷野枯草，春来花开",
+		"半凶半吉，浮沉多端，始凶终吉，能保成功",
+		"遇事猜疑，难望成事，大刀阔斧，始可有成",
+		"黑暗无光，心迷意乱，出尔反尔，难定方针",
+		"云遮半月，内隐风波，应有谨慎，始保平安",
+		"烦闷懊恼，事业难展，自防灾祸，始免困境",
+		"万物化育，繁荣之象，专心一意，必能成功",
+		"见异思迁，十九不成，徒劳无功，不如更换",
+		"吉运自来，能享盛名，把握时机，必获成功",
+		"黑夜温长，进退维谷，内外不和，信用缺乏",
+		"独营事业，事事如意，功成名就，富贵自来",
+		"思虑周祥，计书力行，不失先机，可望成功",
+		"动摇不安，常陷逆境，不得时运，难得利润",
+		"惨淡经营，难免贫困，此数不吉，最好更换",
+		"吉凶参半，惟赖勇气，贯彻力行，始可成功",
+		"利害混集，凶多吉少，得而复失，难以安顺",
+		"安乐自来，自然吉祥，力行不懈，终必成功",
+		"利不及费，坐食山空，如无章法，难望成功",
+		"吉中带凶，欲速不达，进不如守，可保安祥",
+		"此数大凶，破产之象，宜速改名，以避厄运",
+		"先苦后甘，先甜后苦，如能守成，不致失败",
+		"有得有失，华而不实，须防劫财，始保安顺",
+		"如走夜路，前途无光，希望不大，劳而无功",
+		"得而复失，枉费心机，守成无贪，可保安稳",
+		"最极之数，还本归元，能得繁荣，发达成功",
+	}
+
+	// _kx_num_wx = map[rune]rune{'一': '土', '二': '火', '三': '金', '四': '金', '五': '木', '六': '火', '七': '金', '八': '水', '九': '木', '十': '金'}
+
+	_kx_num    = []rune("一二三四五六七八九十")
+	_kx_num_wx = []string{"土", "火", "金", "金", "木", "火", "金", "水", "木", "金"}
+	_wx        = []string{"金", "木", "水", "火", "土"}
+	//go:embed kx.dict
+	_kxDict []byte
+	_       embed.FS
 )
 
-func load81() {
-	o81.Do(func() {
-		r := csv.NewReader(bytes.NewReader(e81))
-		// 数, 数理评分, 描述, 吉凶, 附加, 性格影响
-		for l, err := r.Read(); err == nil; l, err = r.Read() {
-			var (
-				shu, _ = strconv.Atoi(strings.TrimSpace(l[0]))
-				fen, _ = strconv.Atoi(strings.TrimSpace(l[1]))
-			)
-			m81 = append(m81, &R81{
-				Shu: shu,
-				Fen: fen,
-				Jx:  l[2],
-				Jxm: l[3],
-				Zy:  l[4],
-				Xg:  l[5],
-				Xgm: l[6],
-			})
-		}
-	})
+// R81 八一数理结果，数理评分, 吉凶, 吉凶描述, 官财艺, 性格影响
+type R81 struct {
+	S int    `json:"s,omitempty"` // 数
+	F int    `json:"f,omitempty"` // 数理评分
+	J string `json:"j,omitempty"` // 吉凶
+	M string `json:"m,omitempty"` // 吉凶描述
+	Z string `json:"z,omitempty"` // 职业增益，官财艺
 }
 
-func loadkx() {
-	okx.Do(func() {
-		mkx = map[rune]*RKx{}
-		r := csv.NewReader(bytes.NewReader(eKX))
-		// 二,2,火
-		for l, err := r.Read(); err == nil; l, err = r.Read() {
-			var (
-				zi    = ([]rune(l[0]))[0]
-				bi, _ = strconv.Atoi(l[1])
-			)
-			mkx[zi] = &RKx{
-				Zi: string(zi),
-				Bi: bi,
-				Wu: l[2],
-			}
+func (r R81) String() string {
+	var s string
+	if r.S > 0 {
+		s = "(" + strconv.Itoa(r.S) + ")"
+	}
+	var jx string
+	var jxl int
+	if r.J != "" {
+		if r.J == "吉" || r.J == "凶" {
+			jxl = 7
+		} else {
+			jxl = 5
 		}
+		jx = "(" + r.J + ")"
+	}
+	var zy string
+	if r.Z != "" {
+		zy = "(+" + r.Z + ")"
+	}
+	return fmt.Sprintf("%-4s %-*s %s %s", s, jxl, jx, r.M, zy)
+}
 
-		r = csv.NewReader(bytes.NewReader(eFJ))
-		// 繁,简
-		for l, err := r.Read(); err == nil; l, err = r.Read() {
-			var (
-				f = ([]rune(l[0]))[0]
-				j = ([]rune(l[1]))[0]
-			)
-			if cj, find := mkx[j]; find {
-				mkx[f] = cj
-			}
-		}
-	})
+// Find81 查看数理说明
+func Find81(S int) R81 {
+	if S > 81 {
+		S = S % 80
+	}
+	if S == 0 {
+		S = 80
+	}
+	return R81{
+		S: S,
+		F: _81_fen[S-1],
+		J: _81_jx[S-1],
+		M: _81_ms[S-1],
+		Z: _81_zy[S-1],
+	}
 }
 
 // RKx 康熙笔画数和五行属性
 type RKx struct {
-	Zi string `json:"zi,omitempty"` // 字符
-	Bi int    `json:"bi,omitempty"` // 笔画
-	Wu string `json:"wu,omitempty"` // 五行属性
-}
-
-// R81 八一数理结果，数理评分, 吉凶, 吉凶描述, 官财艺, 性格影响
-type R81 struct {
-	Shu int    `json:"shu,omitempty"` // 数
-	Fen int    `json:"fen,omitempty"` // 数理评分
-	Jx  string `json:"jx,omitempty"`  // 吉凶
-	Jxm string `json:"jxm,omitempty"` // 吉凶描述
-	Zy  string `json:"zy,omitempty"`  // 职业增益，官财艺
-	Xg  string `json:"xg,omitempty"`  // 性格类型
-	Xgm string `json:"xgm,omitempty"` // 性格描述
-}
-
-// Find81 查看数理说明
-func Find81(shu int) *R81 {
-	load81()
-	if shu > 81 {
-		shu = shu % 80
-	}
-	if shu == 0 {
-		shu = 80
-	}
-	return m81[shu-1]
+	Z  string `json:"z,omitempty"`  // 字符
+	B  int    `json:"b,omitempty"`  // 笔画
+	Wx string `json:"wx,omitempty"` // 五行属性
 }
 
 // FindKx 查找字符对应的康熙笔画数和五行属性
-func FindKx(c rune) *RKx {
-	loadkx()
-	return mkx[c]
-}
-
-// AssessName 评测名称
-func AssessName(name string) *NameReport {
-	var n int32
-	var wu string
-	var chars []RKx
-	for _, r := range name {
-		var find bool
-		switch {
-		case r >= '0' && r <= '9':
-			n += r - '0'
-		case r >= 'a' && r <= 'z':
-			n += r - 'a' + 1
-		case r >= 'A' && r <= 'Z':
-			n += r - 'A' + 1
-		case r >= 0x4e00: // r >= 0x4e00 && r <= 0x9fa5
-			if rkx := FindKx(r); rkx != nil {
-				n += int32(rkx.Bi)
-				if rkx.Wu != "" {
-					wu = rkx.Wu
-				}
-				chars = append(chars, *rkx)
-				find = true
-			}
-		}
-		if !find {
-			chars = append(chars, RKx{Zi: string(r)})
+func FindKx(c rune) (r RKx) {
+	r.Z = string(c)
+	if i := indexRune(_kx_num, c); i != -1 {
+		r.B, r.Wx = i+1, _kx_num_wx[i]
+		return
+	}
+	if c >= 0x4e00 && c <= 0x9fa5 {
+		i := int(c-0x4e00) * 2
+		r.B = int(_kxDict[i])
+		if _kxDict[i+1] > 0 {
+			r.Wx = string(_wx[_kxDict[i+1]-1])
 		}
 	}
-
-	if n == 0 {
-		return nil
-	}
-
-	r81 := Find81(int(n))
-	if r81 == nil {
-		return nil
-	}
-	return &NameReport{
-		Name:  name,
-		Chars: chars,
-		Wu:    wu,
-		R81:   *r81,
-	}
+	return
 }
 
 // NameReport 名称评测结果
 type NameReport struct {
-	Name  string `json:"name,omitempty"`
-	Chars []RKx  `json:"chars,omitempty"`
-	Wu    string `json:"wu,omitempty"` // 五行属性
-	R81   `json:",inline"`
+	N   string `json:"n,omitempty"`  // 名字
+	C   []RKx  `json:"c,omitempty"`  // 单个字符结果
+	Wx  string `json:"wx,omitempty"` // 五行属性
+	R81 `json:",inline"`
 }
 
-// AssessPhone 评测手机号码
-func AssessPhone(phoneNum string) *PhoneReport {
-	sn := phoneNum
-	if len(sn) > 4 {
-		sn = phoneNum[len(phoneNum)-4:]
+func (r NameReport) String() string {
+	var wx string
+	if r.Wx != "" {
+		wx = "(" + r.Wx + ")"
 	}
-	n, _ := strconv.Atoi(sn)
-	r81 := Find81(n)
-	if r81 == nil {
-		return nil
+	return fmt.Sprintf("%s%s", r.R81, wx)
+}
+
+// AssessName 评测名称
+func AssessName(name string) (rpt NameReport) {
+	rpt.N = name
+	for _, c := range rpt.N {
+		var find bool
+		switch {
+		case c >= '0' && c <= '9':
+			rpt.S += int(c - '0')
+		case c >= 'a' && c <= 'z':
+			rpt.S += int(c - 'a' + 1)
+		case c >= 'A' && c <= 'Z':
+			rpt.S += int(c - 'A' + 1)
+		case c >= 0x4e00 && c <= 0x9fa5:
+			if rkx := FindKx(c); rkx.Z != "" {
+				rpt.S += rkx.B
+				if rkx.Wx != "" && rpt.Wx == "" {
+					rpt.Wx = rkx.Wx
+				}
+				rpt.C = append(rpt.C, rkx)
+				find = true
+			}
+		}
+		if !find {
+			rpt.C = append(rpt.C, RKx{Z: string(c)})
+		}
 	}
-	return &PhoneReport{
-		Phone: phoneNum,
-		R81:   *r81,
+
+	if rpt.S == 0 {
+		return
 	}
+
+	rpt.R81 = Find81(rpt.S)
+	return
 }
 
 // PhoneReport 手机号评测结果
 type PhoneReport struct {
 	Phone string `json:"phone,omitempty"`
 	R81   `json:",inline"`
+}
+
+func (r PhoneReport) String() string {
+	return r.R81.String()
+}
+
+// AssessPhone 评测手机号码
+func AssessPhone(phoneNum string) (rpt PhoneReport) {
+	sn := phoneNum
+	if len(sn) > 4 {
+		sn = phoneNum[len(phoneNum)-4:]
+	}
+	n, _ := strconv.Atoi(sn)
+	r81 := Find81(n)
+	if r81.J == "" {
+		return
+	}
+	rpt.Phone = phoneNum
+	rpt.R81 = r81
+	return
+}
+
+func indexRune(s []rune, v rune) int {
+	for i, vs := range s {
+		if v == vs {
+			return i
+		}
+	}
+	return -1
+}
+
+func countText(s string, length int) int {
+	rw := utf8.RuneCountInString(s)
+	bw := len(s)
+	zc := (bw - rw) / 2
+	return length - zc
 }
