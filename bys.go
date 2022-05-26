@@ -120,20 +120,18 @@ func (r R81) String() string {
 		s = "(" + strconv.Itoa(r.S) + ")"
 	}
 	var jx string
-	var jxl int
 	if r.J != "" {
-		if r.J == "吉" || r.J == "凶" {
-			jxl = 7
-		} else {
-			jxl = 5
-		}
 		jx = "(" + r.J + ")"
 	}
 	var zy string
 	if r.Z != "" {
 		zy = "(+" + r.Z + ")"
 	}
-	return fmt.Sprintf("%-4s %-*s %s %s", s, jxl, jx, r.M, zy)
+	var fen string
+	if r.F > 0 {
+		fen = "(" + strconv.Itoa(r.F) + ")"
+	}
+	return fmt.Sprintf("%-4s %-5s %-*s %s %s", s, fen, countText(jx, 8), jx, r.M, zy)
 }
 
 // Find81 查看数理说明
