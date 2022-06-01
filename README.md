@@ -11,7 +11,7 @@ package main
 import "github.com/cnk3x/bys"
 
 func main(){
-    nr := bys.AssessName("我是名称")
+    nr := bys.AssessName("文天祥")
     fmt.Printf("%+v", nr)
     pr := bys.AssessPhone("13812348765")
     fmt.Printf("%+v", pr)
